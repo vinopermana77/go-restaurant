@@ -1,10 +1,24 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
+
+func main() {
+	seedDB()
+	e := echo.New()
+
+	// localhost:14045
+	e.GET("/menu/food", getFoodMenu)
+	e.GET("/menu/drink", getDrinkMenu)
+
+	e.Logger.Fatal(e.Start(":14045"))
+}
 
 // struct = reusable
 type MenuItem struct {
@@ -13,7 +27,7 @@ type MenuItem struct {
 	Price     int
 }
 
-func getFoodMenu(c echo.Context) error {
+func seedDB() {
 	foodMenu := []MenuItem{
 		{
 			Name:      "Bakmie",
@@ -26,14 +40,6 @@ func getFoodMenu(c echo.Context) error {
 			Price:     41250,
 		},
 	}
-	// return c.JSON(http.StatusOK, foodMenu) - Simple
-
-	// Spesifik
-	return c.JSON(http.StatusOK, map[string]interface{}{
-		"data": foodMenu,
-	})
-}
-func getDrinkMenu(c echo.Context) error {
 	drinkMenu := []MenuItem{
 		{
 			Name:      "Teh Botol",
@@ -46,18 +52,33 @@ func getDrinkMenu(c echo.Context) error {
 			Price:     5000,
 		},
 	}
+
+	fmt.Println(foodMenu, drinkMenu)
+	// connect database
+	dbAddress := "host=localhost port=5432 user=postgres password=postgres dbname=go_resto_app sslmode=disable"
+	db, err := gorm.Open(postgres.Open(dbAddress))
+	if err != nil {
+		panic(err)
+	}
+
+	// migrate database
+	db.AutoMigrate(&MenuItem{})
+
+}
+
+func getFoodMenu(c echo.Context) error {
+	// return c.JSON(http.StatusOK, foodMenu) - Simple
+
+	// Spesifik
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		// "data": foodMenu,
+	})
+}
+func getDrinkMenu(c echo.Context) error {
 	// return c.JSON(http.StatusOK, drinkMenu) - Simple
 
 	// Spesifik
 	return c.JSON(http.StatusOK, map[string]interface{}{
-		"data": drinkMenu,
+		// "data": drinkMenu,
 	})
-}
-
-func main() {
-	e := echo.New()
-	// localhost:14045
-	e.GET("/menu/food", getDrinkMenu)
-	e.GET("/menu/drink", getDrinkMenu)
-	e.Logger.Fatal(e.Start(":14045"))
 }
